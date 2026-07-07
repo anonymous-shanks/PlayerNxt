@@ -37,6 +37,9 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     private boolean canBoostVolume = false;
     private boolean canSetAutoBrightness = false;
 
+    private float originalSpeed = 1.0f;
+    private boolean isSpeedingUp = false;
+
     private final float IGNORE_BORDER = Utils.dpToPx(24);
     private final float SCROLL_STEP = Utils.dpToPx(16);
     private final float SCROLL_STEP_SEEK = Utils.dpToPx(8);
@@ -94,6 +97,9 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                     PlayerActivity.locked = false;
                     Utils.showText(CustomPlayerView.this, "", MESSAGE_TIMEOUT_LONG);
                     setIconLock(false);
+                    if (getContext() instanceof PlayerActivity) {
+                        ((PlayerActivity) getContext()).updateLockButton();
+                    }
                 }
             });
         }
@@ -126,6 +132,13 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 break;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                if (isSpeedingUp) {
+                    isSpeedingUp = false;
+                    if (PlayerActivity.player != null) {
+                        PlayerActivity.player.setPlaybackSpeed(originalSpeed);
+                        setCustomErrorMessage(null);
+                    }
+                }
                 if (handleTouch) {
                     if (gestureOrientation == Orientation.HORIZONTAL) {
                         setCustomErrorMessage(null);
@@ -171,8 +184,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     public void onShowPress(MotionEvent motionEvent) {
     }
 
-
-
     @Override
     public boolean onSingleTapUp(MotionEvent motionEvent) {
         return false;
@@ -188,7 +199,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (!PlayerActivity.controllerVisibleFully) {
             showController();
             return true;
-        } else if (PlayerActivity.haveMedia && PlayerActivity.player != null && PlayerActivity.player.isPlaying()) {
+        } else if (PlayerActivity.haveMedia && PlayerActivity.player != null) {
             hideController();
             return true;
         }
@@ -292,16 +303,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
     @Override
     public void onLongPress(MotionEvent motionEvent) {
-        if (PlayerActivity.locked || (getPlayer() != null && getPlayer().isPlaying())) {
-            PlayerActivity.locked = !PlayerActivity.locked;
-            isHandledLongPress = true;
-            Utils.showText(this, "", MESSAGE_TIMEOUT_LONG);
-            setIconLock(PlayerActivity.locked);
-
-            if (PlayerActivity.locked && PlayerActivity.controllerVisible) {
-                hideController();
-            }
+        if (PlayerActivity.locked || PlayerActivity.player == null || !PlayerActivity.player.isPlaying()) {
+            return;
         }
+        
+        isHandledLongPress = true;
+        isSpeedingUp = true;
+        originalSpeed = PlayerActivity.player.getPlaybackParameters().speed;
+        PlayerActivity.player.setPlaybackSpeed(2.0f);
+        hideController();
+        setCustomErrorMessage("2x Speed");
     }
 
     @Override
@@ -416,7 +427,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
             }
-            //videoSurfaceView.animate().setStartDelay(0).setDuration(0).scaleX(scale).scaleY(scale).start();
         }
     }
 
