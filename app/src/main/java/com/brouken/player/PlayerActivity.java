@@ -162,6 +162,7 @@ public class PlayerActivity extends Activity {
     private ImageButton buttonRotation;
     private ImageButton exoSettings;
     private ImageButton exoPlayPause;
+    public ImageButton buttonLock;
     private ProgressBar loadingProgressBar;
     private PlayerControlView controlView;
     private CustomDefaultTimeBar timeBar;
@@ -214,10 +215,15 @@ public class PlayerActivity extends Activity {
         }
     };
 
+    public void updateLockButton() {
+        if (buttonLock != null) {
+            buttonLock.setImageResource(locked ? R.drawable.ic_lock_24dp : R.drawable.ic_lock_open_24dp);
+        }
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Rotate ASAP, before super/inflating to avoid glitches with activity launch animation
         mPrefs = new Prefs(this);
         Utils.setOrientation(this, mPrefs.orientation);
 
@@ -235,7 +241,6 @@ public class PlayerActivity extends Activity {
                 window.setDecorFitsSystemWindows(false);
                 WindowInsetsController windowInsetsController = window.getInsetsController();
                 if (windowInsetsController != null) {
-                    // On Android 12 BEHAVIOR_DEFAULT allows system gestures without visible system bars
                     windowInsetsController.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_DEFAULT);
                 }
             }
@@ -392,8 +397,6 @@ public class PlayerActivity extends Activity {
         });
 
         if (Utils.isPiPSupported(this)) {
-            // TODO: Android 12 improvements:
-            // https://developer.android.com/about/versions/12/features/pip-improvements
             mPictureInPictureParamsBuilder = new PictureInPictureParams.Builder();
             boolean success = updatePictureInPictureActions(R.drawable.ic_play_arrow_24dp, R.string.exo_controls_play_description, CONTROL_TYPE_PLAY, REQUEST_PLAY);
 
@@ -416,7 +419,6 @@ public class PlayerActivity extends Activity {
                 playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_ZOOM);
                 Utils.showText(playerView, getString(R.string.video_resize_crop));
             } else {
-                // Default mode
                 playerView.setResizeMode(AspectRatioFrameLayout.RESIZE_MODE_FIT);
                 Utils.showText(playerView, getString(R.string.video_resize_fit));
             }
@@ -430,6 +432,7 @@ public class PlayerActivity extends Activity {
                 return true;
             });
         }
+        
         buttonRotation = new ImageButton(this, null, 0, R.style.ExoStyledControls_Button_Bottom);
         buttonRotation.setContentDescription(getString(R.string.button_rotate));
         updateButtonRotation();
@@ -439,6 +442,18 @@ public class PlayerActivity extends Activity {
             updateButtonRotation();
             Utils.showText(playerView, getString(mPrefs.orientation.description), 2500);
             resetHideCallbacks();
+        });
+
+        buttonLock = new ImageButton(this, null, 0, R.style.ExoStyledControls_Button_Bottom);
+        buttonLock.setId(View.generateViewId());
+        buttonLock.setContentDescription("Lock");
+        updateLockButton();
+        buttonLock.setOnClickListener(view -> {
+            locked = !locked;
+            updateLockButton();
+            if (locked) {
+                playerView.hideController();
+            }
         });
 
         final int titleViewPaddingHorizontal = Utils.dpToPx(14);
@@ -457,7 +472,6 @@ public class PlayerActivity extends Activity {
         centerView.addView(titleView);
 
         titleView.setOnLongClickListener(view -> {
-            // Prevent FileUriExposedException
             if (mPrefs.mediaUri != null && ContentResolver.SCHEME_FILE.equals(mPrefs.mediaUri.getScheme())) {
                 return false;
             }
@@ -469,7 +483,6 @@ public class PlayerActivity extends Activity {
             else
                 shareIntent.setType(mPrefs.mediaType);
             shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            // Start without intent chooser to allow any target to be set as default
             startActivity(shareIntent);
 
             return true;
@@ -575,9 +588,7 @@ public class PlayerActivity extends Activity {
 
         exoPlayPause.setOnClickListener(view -> dispatchPlayPause());
 
-        // Prevent double tap actions in controller
         findViewById(R.id.exo_bottom_bar).setOnTouchListener((v, event) -> true);
-        //titleView.setOnTouchListener((v, event) -> true);
 
         playerListener = new PlayerListener();
 
@@ -596,10 +607,8 @@ public class PlayerActivity extends Activity {
         exoBasicControls.removeView(exoSettings);
         final ImageButton exoRepeat = exoBasicControls.findViewById(R.id.exo_repeat_toggle);
         exoBasicControls.removeView(exoRepeat);
-        //exoBasicControls.setVisibility(View.GONE);
 
         exoSettings.setOnLongClickListener(view -> {
-            //askForScope(false, false);
             Intent intent = new Intent(this, SettingsActivity.class);
             startActivityForResult(intent, REQUEST_SETTINGS);
             return true;
@@ -619,6 +628,8 @@ public class PlayerActivity extends Activity {
         controls.addView(buttonOpen);
         controls.addView(exoSubtitle);
         controls.addView(buttonAspectRatio);
+        controls.addView(buttonLock); // Inserted Lock button
+        
         if (Utils.isPiPSupported(this) && buttonPiP != null) {
             controls.addView(buttonPiP);
         }
@@ -651,10 +662,8 @@ public class PlayerActivity extends Activity {
                     }
                 }
 
-                // https://developer.android.com/training/system-ui/immersive
                 Utils.toggleSystemUi(PlayerActivity.this, playerView, visibility == View.VISIBLE);
                 if (visibility == View.VISIBLE) {
-                    // Because when using dpad controls, focus resets to first item in bottom controls bar
                     findViewById(R.id.exo_play_pause).requestFocus();
                 }
 
@@ -675,8 +684,6 @@ public class PlayerActivity extends Activity {
                                         buttonOpen.performClick();
                                     }
                                 });
-                        // TODO: Explain gestures?
-                        //  "Use vertical and horizontal gestures to change brightness, volume and seek in video"
                         mPrefs.markFirstRun();
                     }
                     if (errorToShow != null) {
@@ -1002,7 +1009,6 @@ public class PlayerActivity extends Activity {
             }
         } else if ((event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK &&
                 event.getAction() == MotionEvent.ACTION_MOVE) {
-            // TODO: This somehow works, but it would use better filtering
             float value = event.getAxisValue(MotionEvent.AXIS_RZ);
             for (int i = 0; i < event.getHistorySize(); i++) {
                 float historical = event.getHistoricalAxisValue(MotionEvent.AXIS_RZ, i);
@@ -1022,7 +1028,6 @@ public class PlayerActivity extends Activity {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
 
         if (isInPictureInPictureMode) {
-            // On Android TV it is required to hide controller in this PIP change callback
             playerView.hideController();
             setSubtitleTextSizePiP();
             playerView.setScale(1.f);
@@ -1096,7 +1101,6 @@ public class PlayerActivity extends Activity {
                 if (requestCode == REQUEST_CHOOSER_VIDEO) {
                     boolean uriAlreadyTaken = false;
 
-                    // https://commonsware.com/blog/2020/06/13/count-your-saf-uri-permission-grants.html
                     final ContentResolver contentResolver = getContentResolver();
                     for (UriPermission persistedUri : contentResolver.getPersistedUriPermissions()) {
                         if (persistedUri.getUri().equals(mPrefs.scopeUri)) {
@@ -1161,15 +1165,12 @@ public class PlayerActivity extends Activity {
             super.onActivityResult(requestCode, resultCode, data);
         }
 
-        // Init here because onStart won't follow when app was only paused when file chooser was shown
-        // (for example pop-up file chooser on tablets)
         if (resultCode == RESULT_OK && alive) {
             initializePlayer();
         }
     }
 
     private void handleSubtitles(Uri uri) {
-        // Convert subtitles to UTF-8 if necessary
         SubtitleUtils.clearCache(this);
         uri = Utils.convertToUTF(this, uri);
         mPrefs.updateSubtitle(uri);
@@ -1219,7 +1220,7 @@ public class PlayerActivity extends Activity {
                     .setPreferredTextLanguage(locale.getISO3Language())
             );
         }
-        // https://github.com/google/ExoPlayer/issues/8571
+        
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory()
                 .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS)
                 .setTsExtractorTimestampSearchBytes(1500 * TsExtractor.TS_PACKET_SIZE);
@@ -1274,12 +1275,12 @@ public class PlayerActivity extends Activity {
         playerView.setControllerShowTimeoutMs(-1);
 
         locked = false;
+        updateLockButton();
 
         if (haveMedia) {
             if (isNetworkUri) {
                 timeBar.setBufferedColor(DefaultTimeBar.DEFAULT_BUFFERED_COLOR);
             } else {
-                // https://github.com/google/ExoPlayer/issues/5765
                 timeBar.setBufferedColor(0x33FFFFFF);
             }
 
@@ -1361,7 +1362,6 @@ public class PlayerActivity extends Activity {
             }
 
             player.setHandleAudioBecomingNoisy(!isTvBox);
-//            mediaSession.setActive(true);
         } else {
             playerView.showController();
         }
@@ -1383,7 +1383,6 @@ public class PlayerActivity extends Activity {
             mPrefs.updateOrientation();
 
             if (haveMedia) {
-                // Prevent overwriting temporarily inaccessible media position
                 if (player.isCurrentMediaItemSeekable()) {
                     mPrefs.updatePosition(player.getCurrentPosition());
                 }
@@ -1408,7 +1407,6 @@ public class PlayerActivity extends Activity {
         if (player != null) {
             notifyAudioSessionUpdate(false);
 
-//            mediaSession.setActive(false);
             if (mediaSession != null) {
                 mediaSession.release();
             }
@@ -1467,6 +1465,7 @@ public class PlayerActivity extends Activity {
 
             if (!isPlaying) {
                 PlayerActivity.locked = false;
+                updateLockButton();
             }
         }
 
@@ -1689,7 +1688,6 @@ public class PlayerActivity extends Activity {
     private Intent createBaseFileIntent(final String action, final Uri initialUri) {
         final Intent intent = new Intent(action);
 
-        // http://stackoverflow.com/a/31334967/1615876
         intent.putExtra("android.content.extra.SHOW_ADVANCED", true);
 
         if (Build.VERSION.SDK_INT >= 26 && initialUri != null) {
@@ -1769,12 +1767,10 @@ public class PlayerActivity extends Activity {
         }
         Tracks tracks = player.getCurrentTracks();
 
-        // Disabled (e.g. selected subtitle "None" - different than default)
         if (!tracks.isTypeSelected(trackType)) {
             return "#none";
         }
 
-        // Audio track set to "Auto"
         if (trackType == C.TRACK_TYPE_AUDIO) {
             if (!hasOverrideType(C.TRACK_TYPE_AUDIO)) {
                 return null;
@@ -1796,7 +1792,6 @@ public class PlayerActivity extends Activity {
     }
 
     void setSubtitleTextSize(final int orientation) {
-        // Tweak text size as fraction size doesn't work well in portrait
         final SubtitleView subtitleView = playerView.getSubtitleView();
         if (subtitleView != null) {
             final float size;
@@ -1822,7 +1817,6 @@ public class PlayerActivity extends Activity {
         updateSubtitleViewMargin(player.getVideoFormat());
     }
 
-    // Set margins to fix PGS aspect as subtitle view is outside of content frame
     void updateSubtitleViewMargin(Format format) {
         if (format == null) {
             return;
@@ -1837,7 +1831,6 @@ public class PlayerActivity extends Activity {
 
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
             if (aspectDisplay.floatValue() > aspectVideo.floatValue()) {
-                // Left & right bars
                 int videoWidth = metrics.heightPixels / aspectVideo.getDenominator() * aspectVideo.getNumerator();
                 marginHorizontal = (metrics.widthPixels - videoWidth) / 2;
             }
@@ -1866,8 +1859,6 @@ public class PlayerActivity extends Activity {
             setPictureInPictureParams(((PictureInPictureParams.Builder) mPictureInPictureParamsBuilder).build());
             return true;
         } catch (IllegalStateException e) {
-            // On Samsung devices with Talkback active:
-            // Caused by: java.lang.IllegalStateException: setPictureInPictureParams: Device doesn't support picture-in-picture mode.
             e.printStackTrace();
         }
         return false;
@@ -1992,11 +1983,8 @@ public class PlayerActivity extends Activity {
             if (mPrefs.scopeUri != null) {
                 if ("com.android.externalstorage.documents".equals(mPrefs.mediaUri.getHost()) ||
                         "org.courville.nova.provider".equals(mPrefs.mediaUri.getHost())) {
-                    // Fast search based on path in uri
                     video = SubtitleUtils.findUriInScope(this, mPrefs.scopeUri, mPrefs.mediaUri);
                 } else {
-                    // Slow search based on matching metadata, no path in uri
-                    // Provider "com.android.providers.media.documents" when using "Videos" tab in file picker
                     DocumentFile fileScope = DocumentFile.fromTreeUri(this, mPrefs.scopeUri);
                     DocumentFile fileMedia = DocumentFile.fromSingleUri(this, mPrefs.mediaUri);
                     video = SubtitleUtils.findDocInScope(fileScope, fileMedia);
@@ -2024,18 +2012,14 @@ public class PlayerActivity extends Activity {
     }
 
     Uri findNext() {
-        // TODO: Unify with searchSubtitles()
         if (mPrefs.scopeUri != null || isTvBox) {
             DocumentFile video = null;
             File videoRaw = null;
 
             if (!isTvBox && mPrefs.scopeUri != null) {
                 if ("com.android.externalstorage.documents".equals(mPrefs.mediaUri.getHost())) {
-                    // Fast search based on path in uri
                     video = SubtitleUtils.findUriInScope(this, mPrefs.scopeUri, mPrefs.mediaUri);
                 } else {
-                    // Slow search based on matching metadata, no path in uri
-                    // Provider "com.android.providers.media.documents" when using "Videos" tab in file picker
                     DocumentFile fileScope = DocumentFile.fromTreeUri(this, mPrefs.scopeUri);
                     DocumentFile fileMedia = DocumentFile.fromSingleUri(this, mPrefs.mediaUri);
                     video = SubtitleUtils.findDocInScope(fileScope, fileMedia);
@@ -2085,7 +2069,6 @@ public class PlayerActivity extends Activity {
 
     void resetHideCallbacks() {
         if (haveMedia && player != null && player.isPlaying()) {
-            // Keep controller UI visible - alternative to resetHideCallbacks()
             playerView.setControllerShowTimeoutMs(PlayerActivity.CONTROLLER_TIMEOUT);
         }
     }
@@ -2134,8 +2117,6 @@ public class PlayerActivity extends Activity {
         final Format format = player.getVideoFormat();
 
         if (format != null) {
-            // https://github.com/google/ExoPlayer/issues/8611
-            // TODO: Test/disable on Android 11+
             final View videoSurfaceView = playerView.getVideoSurfaceView();
             if (videoSurfaceView instanceof SurfaceView) {
                 ((SurfaceView)videoSurfaceView).getHolder().setFixedSize(format.width, format.height);
