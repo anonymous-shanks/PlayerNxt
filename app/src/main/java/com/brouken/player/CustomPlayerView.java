@@ -111,7 +111,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             });
         }
 
-        // Initialize minimalist 2x speed overlay at top-right
+        // Initialize minimalist 2x speed overlay at top-center
         speedOverlay = new TextView(context);
         speedOverlay.setTextColor(Color.WHITE);
         speedOverlay.setTextSize(12f);
@@ -134,7 +134,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.gravity = Gravity.TOP | Gravity.END;
+        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             params.topMargin = (int) Utils.dpToPx(48); // Safe margin for portrait status bar/notch
