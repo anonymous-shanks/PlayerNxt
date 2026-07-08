@@ -1,6 +1,7 @@
 package com.brouken.player;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.Typeface;
@@ -110,7 +111,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             });
         }
 
-        // Initialize minimalistic 2x speed overlay
+        // Initialize minimalist 2x speed overlay at top-right
         speedOverlay = new TextView(context);
         speedOverlay.setTextColor(Color.WHITE);
         speedOverlay.setTextSize(12f);
@@ -133,9 +134,31 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
-        params.topMargin = (int) Utils.dpToPx(48); // Keeps it away from device notch/status bar
+        params.gravity = Gravity.TOP | Gravity.END;
+        
+        if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+            params.topMargin = (int) Utils.dpToPx(48); // Safe margin for portrait status bar/notch
+        } else {
+            params.topMargin = (int) Utils.dpToPx(8); // Higher up in landscape
+        }
+        
+        params.rightMargin = (int) Utils.dpToPx(16);
         addView(speedOverlay, params);
+    }
+
+    @Override
+    protected void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        // Automatically adjust the speed overlay margin when the device is rotated
+        if (speedOverlay != null) {
+            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) speedOverlay.getLayoutParams();
+            if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                params.topMargin = (int) Utils.dpToPx(48);
+            } else {
+                params.topMargin = (int) Utils.dpToPx(8);
+            }
+            speedOverlay.setLayoutParams(params);
+        }
     }
 
     public void clearIcon() {
