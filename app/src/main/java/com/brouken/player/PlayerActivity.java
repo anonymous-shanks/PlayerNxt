@@ -466,6 +466,16 @@ public class PlayerActivity extends Activity {
         speedContainer.setGravity(android.view.Gravity.CENTER);
         speedContainer.setClickable(true);
         speedContainer.setFocusable(true);
+
+        // --- ALIGNMENT FIX START ---
+        LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                (int) Utils.dpToPx(48) // Matches standard ExoPlayer button height
+        );
+        containerParams.gravity = android.view.Gravity.CENTER_VERTICAL;
+        speedContainer.setLayoutParams(containerParams);
+        // --- ALIGNMENT FIX END ---
+
         TypedValue outValue = new TypedValue();
         getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true);
         speedContainer.setBackgroundResource(outValue.resourceId);
