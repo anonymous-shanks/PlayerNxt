@@ -52,6 +52,7 @@ import android.view.accessibility.CaptioningManager;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -458,17 +459,36 @@ public class PlayerActivity extends Activity {
             }
         });
 
-        // Initialize dynamic Speed Button
+        // Initialize dynamic Speed Button Container with icon and text
+        LinearLayout speedContainer = new LinearLayout(this);
+        speedContainer.setId(View.generateViewId());
+        speedContainer.setOrientation(LinearLayout.HORIZONTAL);
+        speedContainer.setGravity(android.view.Gravity.CENTER);
+        speedContainer.setClickable(true);
+        speedContainer.setFocusable(true);
+        TypedValue outValue = new TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true);
+        speedContainer.setBackgroundResource(outValue.resourceId);
+        int padH = (int) Utils.dpToPx(12);
+        speedContainer.setPadding(padH, 0, padH, 0);
+
+        ImageView speedIcon = new ImageView(this);
+        // Attempt to fetch standard ExoPlayer styling icon, fallback nicely if it fails
+        int speedRes = getResources().getIdentifier("exo_styled_controls_speed", "drawable", getPackageName());
+        if (speedRes == 0) speedRes = androidx.media3.ui.R.drawable.exo_styled_controls_speed;
+        speedIcon.setImageResource(speedRes);
+        speedIcon.setColorFilter(Color.WHITE);
+
         buttonSpeed = new TextView(this);
-        buttonSpeed.setId(View.generateViewId());
-        buttonSpeed.setText("1.00x");
+        buttonSpeed.setText("1.0x");
         buttonSpeed.setTextColor(Color.WHITE);
-        buttonSpeed.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+        buttonSpeed.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14);
         buttonSpeed.setTypeface(null, Typeface.BOLD);
-        buttonSpeed.setGravity(android.view.Gravity.CENTER);
-        int padH = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 14, getResources().getDisplayMetrics());
-        buttonSpeed.setPadding(padH, 0, padH, 0);
-        buttonSpeed.setOnClickListener(view -> showSpeedDialog());
+        buttonSpeed.setPadding((int)Utils.dpToPx(4), 0, 0, 0);
+
+        speedContainer.addView(speedIcon);
+        speedContainer.addView(buttonSpeed);
+        speedContainer.setOnClickListener(view -> showSpeedDialog());
 
         final int titleViewPaddingHorizontal = Utils.dpToPx(14);
         final int titleViewPaddingVertical = getResources().getDimensionPixelOffset(R.dimen.exo_styled_bottom_bar_time_padding);
@@ -659,7 +679,7 @@ public class PlayerActivity extends Activity {
 
         controls.addView(buttonOpen);
         controls.addView(exoSubtitle);
-        controls.addView(buttonSpeed); // Add the dynamic speed button here
+        controls.addView(speedContainer); // Replaced text view with stylish container
         controls.addView(buttonAspectRatio);
         controls.addView(buttonLock);
         
@@ -757,26 +777,35 @@ public class PlayerActivity extends Activity {
         }
     }
 
+    private String formatSpeed(float speed) {
+        String s = String.format(Locale.US, "%.2f", speed);
+        if (s.endsWith("0")) s = s.substring(0, s.length() - 1);
+        if (s.endsWith("0")) s = s.substring(0, s.length() - 1);
+        if (s.endsWith(".")) s = s.substring(0, s.length() - 1);
+        if (!s.contains(".")) s += ".0"; // Always show at least .0
+        return s + "x";
+    }
+
     private void showSpeedDialog() {
         if (player == null) return;
 
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Dynamic Speed Control");
+        builder.setTitle("Playback Speed");
 
         LinearLayout layout = new LinearLayout(this);
         layout.setOrientation(LinearLayout.VERTICAL);
-        int padding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 24, getResources().getDisplayMetrics());
+        int padding = (int) Utils.dpToPx(24);
         layout.setPadding(padding, padding, padding, padding);
 
         final TextView speedLabel = new TextView(this);
-        speedLabel.setText(String.format(Locale.US, "%.2fx", player.getPlaybackParameters().speed));
+        speedLabel.setText(formatSpeed(player.getPlaybackParameters().speed));
         speedLabel.setGravity(android.view.Gravity.CENTER);
         speedLabel.setTextSize(24f);
         speedLabel.setTypeface(null, Typeface.BOLD);
         layout.addView(speedLabel);
 
         final android.widget.SeekBar seekBar = new android.widget.SeekBar(this);
-        // Range: 0.25x to 4.00x -> translates to values from 0 to 375
+        // Map 0.25x to 4.00x to a progress of 0 to 375
         seekBar.setMax(375); 
         float currentSpeed = player.getPlaybackParameters().speed;
         seekBar.setProgress(Math.max(0, (int)(currentSpeed * 100) - 25));
@@ -785,18 +814,16 @@ public class PlayerActivity extends Activity {
             @Override
             public void onProgressChanged(android.widget.SeekBar seekBar, int progress, boolean fromUser) {
                 float newSpeed = (progress + 25) / 100f;
-                speedLabel.setText(String.format(Locale.US, "%.2fx", newSpeed));
-                if (player != null) {
+                speedLabel.setText(formatSpeed(newSpeed));
+                if (player != null && fromUser) {
                     player.setPlaybackSpeed(newSpeed);
                     if (buttonSpeed != null) {
-                        buttonSpeed.setText(String.format(Locale.US, "%.2fx", newSpeed));
+                        buttonSpeed.setText(formatSpeed(newSpeed));
                     }
                 }
             }
-
             @Override
             public void onStartTrackingTouch(android.widget.SeekBar seekBar) {}
-
             @Override
             public void onStopTrackingTouch(android.widget.SeekBar seekBar) {}
         });
@@ -807,13 +834,52 @@ public class PlayerActivity extends Activity {
         lp.topMargin = padding;
         layout.addView(seekBar, lp);
 
+        // Add Quick Presets Row
+        HorizontalScrollView hsv = new HorizontalScrollView(this);
+        hsv.setScrollbarFadingEnabled(true);
+        LinearLayout presetsLayout = new LinearLayout(this);
+        presetsLayout.setOrientation(LinearLayout.HORIZONTAL);
+        presetsLayout.setGravity(android.view.Gravity.CENTER);
+        
+        TypedValue outValue = new TypedValue();
+        getTheme().resolveAttribute(android.R.attr.selectableItemBackground, outValue, true);
+
+        float[] presets = {0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 3.0f, 4.0f};
+        for (float preset : presets) {
+            TextView btn = new TextView(this);
+            btn.setText(formatSpeed(preset));
+            btn.setTextSize(16f);
+            btn.setPadding((int)Utils.dpToPx(16), (int)Utils.dpToPx(12), (int)Utils.dpToPx(16), (int)Utils.dpToPx(12));
+            btn.setBackgroundResource(outValue.resourceId); // Nice ripple effect
+            btn.setClickable(true);
+            btn.setFocusable(true);
+            btn.setOnClickListener(v -> {
+                seekBar.setProgress((int)(preset * 100) - 25);
+                speedLabel.setText(formatSpeed(preset));
+                if (player != null) {
+                    player.setPlaybackSpeed(preset);
+                    if (buttonSpeed != null) {
+                        buttonSpeed.setText(formatSpeed(preset));
+                    }
+                }
+            });
+            presetsLayout.addView(btn);
+        }
+        hsv.addView(presetsLayout);
+        
+        LinearLayout.LayoutParams hsvLp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        hsvLp.topMargin = (int) Utils.dpToPx(16);
+        layout.addView(hsv, hsvLp);
+
         builder.setView(layout);
         builder.setPositiveButton(android.R.string.ok, null);
-        builder.setNeutralButton("Reset to 1x", (dialog, which) -> {
+        builder.setNeutralButton("Reset to 1.0x", (dialog, which) -> {
             if (player != null) {
                 player.setPlaybackSpeed(1.0f);
                 if (buttonSpeed != null) {
-                    buttonSpeed.setText("1.00x");
+                    buttonSpeed.setText("1.0x");
                 }
             }
         });
@@ -1526,7 +1592,7 @@ public class PlayerActivity extends Activity {
         @Override
         public void onPlaybackParametersChanged(PlaybackParameters playbackParameters) {
             if (buttonSpeed != null) {
-                buttonSpeed.setText(String.format(Locale.US, "%.2fx", playbackParameters.speed));
+                buttonSpeed.setText(formatSpeed(playbackParameters.speed));
             }
         }
 
@@ -1592,7 +1658,7 @@ public class PlayerActivity extends Activity {
                 frameRendered = true;
 
                 if (buttonSpeed != null && player != null) {
-                    buttonSpeed.setText(String.format(Locale.US, "%.2fx", player.getPlaybackParameters().speed));
+                    buttonSpeed.setText(formatSpeed(player.getPlaybackParameters().speed));
                 }
 
                 if (videoLoading) {
