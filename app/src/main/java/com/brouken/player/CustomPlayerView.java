@@ -142,7 +142,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             params.topMargin = (int) Utils.dpToPx(8); // Higher up in landscape
         }
         
-        params.rightMargin = (int) Utils.dpToPx(16);
+        // Removed params.rightMargin to ensure perfect horizontal centering
         addView(speedOverlay, params);
     }
 
