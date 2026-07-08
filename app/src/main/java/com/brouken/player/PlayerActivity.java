@@ -460,7 +460,9 @@ public class PlayerActivity extends Activity {
         final int titleViewPaddingVertical = getResources().getDimensionPixelOffset(R.dimen.exo_styled_bottom_bar_time_padding);
         FrameLayout centerView = playerView.findViewById(R.id.exo_controls_background);
         titleView = new TextView(this);
-        titleView.setBackgroundResource(R.color.ui_controls_background);
+        
+        // Remove gradient from Title View 
+        titleView.setBackgroundColor(Color.TRANSPARENT);
         titleView.setTextColor(Color.WHITE);
         titleView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         titleView.setPadding(titleViewPaddingHorizontal, titleViewPaddingVertical, titleViewPaddingHorizontal, titleViewPaddingVertical);
@@ -493,6 +495,24 @@ public class PlayerActivity extends Activity {
         }
 
         controlView = playerView.findViewById(R.id.exo_controller);
+        
+        // Remove native ExoPlayer shadows
+        if (controlView != null) {
+            controlView.setBackgroundColor(Color.TRANSPARENT);
+        }
+        View bottomBar = findViewById(R.id.exo_bottom_bar);
+        if (bottomBar != null) {
+            bottomBar.setBackgroundColor(Color.TRANSPARENT);
+        }
+        View topBar = findViewById(R.id.exo_top);
+        if (topBar != null) {
+            topBar.setBackgroundColor(Color.TRANSPARENT);
+        }
+        View controlsBackground = findViewById(R.id.exo_controls_background);
+        if (controlsBackground != null) {
+            controlsBackground.setBackgroundColor(Color.TRANSPARENT);
+        }
+
         controlView.setOnApplyWindowInsetsListener((view, windowInsets) -> {
             if (windowInsets != null) {
                 if (Build.VERSION.SDK_INT >= 31) {
@@ -628,7 +648,7 @@ public class PlayerActivity extends Activity {
         controls.addView(buttonOpen);
         controls.addView(exoSubtitle);
         controls.addView(buttonAspectRatio);
-        controls.addView(buttonLock); // Inserted Lock button
+        controls.addView(buttonLock);
         
         if (Utils.isPiPSupported(this) && buttonPiP != null) {
             controls.addView(buttonPiP);
@@ -1871,7 +1891,7 @@ public class PlayerActivity extends Activity {
         return isInPictureInPictureMode();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.N)
+    @RequiresApi(api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? Build.VERSION_CODES.N : Build.VERSION_CODES.M)
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -2096,7 +2116,7 @@ public class PlayerActivity extends Activity {
             super.onUserLeaveHint();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
+    @RequiresApi(api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? Build.VERSION_CODES.O : Build.VERSION_CODES.N)
     private void enterPiP() {
         final AppOpsManager appOpsManager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
         if (AppOpsManager.MODE_ALLOWED != appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), getPackageName())) {
