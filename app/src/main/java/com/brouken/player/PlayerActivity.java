@@ -461,7 +461,6 @@ public class PlayerActivity extends Activity {
         FrameLayout centerView = playerView.findViewById(R.id.exo_controls_background);
         titleView = new TextView(this);
         
-        // Remove gradient from Title View 
         titleView.setBackgroundColor(Color.TRANSPARENT);
         titleView.setTextColor(Color.WHITE);
         titleView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -496,7 +495,6 @@ public class PlayerActivity extends Activity {
 
         controlView = playerView.findViewById(R.id.exo_controller);
         
-        // Remove native ExoPlayer shadows
         if (controlView != null) {
             controlView.setBackgroundColor(Color.TRANSPARENT);
         }
@@ -1891,7 +1889,7 @@ public class PlayerActivity extends Activity {
         return isInPictureInPictureMode();
     }
 
-    @RequiresApi(api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.N ? Build.VERSION_CODES.N : Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.N)
     @Override
     public void onConfigurationChanged(@NonNull Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -2116,7 +2114,7 @@ public class PlayerActivity extends Activity {
             super.onUserLeaveHint();
     }
 
-    @RequiresApi(api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? Build.VERSION_CODES.O : Build.VERSION_CODES.N)
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void enterPiP() {
         final AppOpsManager appOpsManager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
         if (AppOpsManager.MODE_ALLOWED != appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), getPackageName())) {
