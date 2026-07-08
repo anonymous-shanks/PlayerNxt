@@ -26,40 +26,26 @@ jobs:
         # Running assembleRelease without signing configs creates unsigned, non-debuggable stable APKs
         run: ./gradlew assembleRelease
 
-      # Corrected nested paths based on Gradle's multiple flavor dimensions
       - name: Upload Latest Universal APK
         uses: actions/upload-artifact@v4
         with:
           name: JustPlayer-Latest-Universal
-          path: app/build/outputs/apk/latest/universal/release/*.apk
-          if-no-files-found: warn
+          path: app/build/outputs/apk/latestUniversal/release/*.apk
 
       - name: Upload Legacy Universal APK
         uses: actions/upload-artifact@v4
         with:
           name: JustPlayer-Legacy-Universal
-          path: app/build/outputs/apk/legacy/universal/release/*.apk
-          if-no-files-found: warn
+          path: app/build/outputs/apk/legacyUniversal/release/*.apk
 
       - name: Upload Latest Amazon APK
         uses: actions/upload-artifact@v4
         with:
           name: JustPlayer-Latest-Amazon
-          path: app/build/outputs/apk/latest/amazon/release/*.apk
-          if-no-files-found: warn
+          path: app/build/outputs/apk/latestAmazon/release/*.apk
 
       - name: Upload Latest Accrescent APK
         uses: actions/upload-artifact@v4
         with:
           name: JustPlayer-Latest-Accrescent
-          path: app/build/outputs/apk/latest/accrescent/release/*.apk
-          if-no-files-found: warn
-
-      # Fail-safe step: If the above paths miss anything, this grabs EVERY apk built
-      - name: Upload ALL generated APKs (Fallback)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: JustPlayer-All-APKs-Fallback
-          path: app/build/outputs/apk/**/*.apk
-          if-no-files-found: warn
+          path: app/build/outputs/apk/latestAccrescent/release/*.apk
