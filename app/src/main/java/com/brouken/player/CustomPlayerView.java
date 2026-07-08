@@ -3,13 +3,18 @@ package com.brouken.player;
 import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.media.AudioManager;
 import android.os.Build;
 import android.util.AttributeSet;
 import android.view.GestureDetector;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -71,6 +76,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
     private final TextView exoErrorMessage;
     private final View exoProgress;
+    private TextView speedOverlay;
 
     public CustomPlayerView(Context context) {
         this(context, null);
@@ -103,6 +109,33 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 }
             });
         }
+
+        // Initialize minimalistic 2x speed overlay
+        speedOverlay = new TextView(context);
+        speedOverlay.setTextColor(Color.WHITE);
+        speedOverlay.setTextSize(12f);
+        speedOverlay.setTypeface(null, Typeface.BOLD);
+        speedOverlay.setText("2x");
+        
+        int paddingH = (int) Utils.dpToPx(10);
+        int paddingV = (int) Utils.dpToPx(4);
+        speedOverlay.setPadding(paddingH, paddingV, paddingH, paddingV);
+        
+        GradientDrawable bgShape = new GradientDrawable();
+        bgShape.setShape(GradientDrawable.RECTANGLE);
+        bgShape.setCornerRadius(100f);
+        bgShape.setColor(Color.parseColor("#99000000")); // Dark semi-transparent
+        speedOverlay.setBackground(bgShape);
+        
+        speedOverlay.setVisibility(View.GONE);
+        
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        params.topMargin = (int) Utils.dpToPx(48); // Keeps it away from device notch/status bar
+        addView(speedOverlay, params);
     }
 
     public void clearIcon() {
@@ -136,7 +169,9 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                     isSpeedingUp = false;
                     if (PlayerActivity.player != null) {
                         PlayerActivity.player.setPlaybackSpeed(originalSpeed);
-                        setCustomErrorMessage(null);
+                    }
+                    if (speedOverlay != null) {
+                        speedOverlay.setVisibility(View.GONE);
                     }
                 }
                 if (handleTouch) {
@@ -166,7 +201,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (handleTouch)
             mDetector.onTouchEvent(ev);
 
-        // Handle all events to avoid conflict with internal handlers
         return true;
     }
 
@@ -211,7 +245,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (mScaleDetector.isInProgress() || PlayerActivity.player == null || PlayerActivity.locked)
             return false;
 
-        // Exclude edge areas
         if (motionEvent.getY() < IGNORE_BORDER || motionEvent.getX() < IGNORE_BORDER ||
                 motionEvent.getY() > getHeight() - IGNORE_BORDER || motionEvent.getX() > getWidth() - IGNORE_BORDER)
             return false;
@@ -225,7 +258,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (gestureOrientation == Orientation.HORIZONTAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollX += distanceX;
             if (Math.abs(gestureScrollX) > SCROLL_STEP || (gestureOrientation == Orientation.HORIZONTAL && Math.abs(gestureScrollX) > SCROLL_STEP_SEEK)) {
-                // Do not show controller if not already visible
                 setControllerAutoShow(false);
 
                 if (gestureOrientation == Orientation.UNKNOWN) {
@@ -278,7 +310,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             }
         }
 
-        // LEFT = Brightness  |  RIGHT = Volume
         if (gestureOrientation == Orientation.VERTICAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollY += distanceY;
             if (Math.abs(gestureScrollY) > SCROLL_STEP) {
@@ -312,7 +343,9 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         originalSpeed = PlayerActivity.player.getPlaybackParameters().speed;
         PlayerActivity.player.setPlaybackSpeed(2.0f);
         hideController();
-        setCustomErrorMessage("2x Speed");
+        if (speedOverlay != null) {
+            speedOverlay.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
