@@ -1383,6 +1383,7 @@ public class PlayerActivity extends Activity {
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory()
                 .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS)
                 .setTsExtractorTimestampSearchBytes(1500 * TsExtractor.TS_PACKET_SIZE);
+        @RequiresApi(api = Build.VERSION_CODES.N)
         @SuppressLint("WrongConstant") RenderersFactory renderersFactory = new DefaultRenderersFactory(this)
                 .setExtensionRendererMode(mPrefs.decoderPriority)
                 .setMapDV7ToHevc(mPrefs.mapDV7ToHevc);
@@ -2267,7 +2268,7 @@ public class PlayerActivity extends Activity {
             super.onUserLeaveHint();
     }
 
-    @RequiresApi(api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? Build.VERSION_CODES.O : Build.VERSION_CODES.N)
+    @RequiresApi(api = Build.VERSION_CODES.O)
     private void enterPiP() {
         final AppOpsManager appOpsManager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
         if (AppOpsManager.MODE_ALLOWED != appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), getPackageName())) {
