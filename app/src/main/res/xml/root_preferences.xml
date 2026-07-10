@@ -3,6 +3,12 @@
 
     <PreferenceCategory app:title="@string/pref_general_header">
 
+        <SwitchPreferenceCompat
+            app:key="single_tap_play_pause"
+            app:defaultValue="false"
+            app:title="Single tap to play/pause"
+            app:summary="Tap on the center of the screen to play or pause" />
+
         <ListPreference
             app:defaultValue="auto"
             app:entries="@array/file_access_entries"
