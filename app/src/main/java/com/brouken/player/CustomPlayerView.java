@@ -1,6 +1,7 @@
 package com.brouken.player;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Rect;
@@ -24,6 +25,7 @@ import androidx.media3.common.C;
 import androidx.media3.exoplayer.SeekParameters;
 import androidx.media3.ui.AspectRatioFrameLayout;
 import androidx.media3.ui.PlayerView;
+import androidx.preference.PreferenceManager;
 
 import java.util.Collections;
 
@@ -34,6 +36,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     private Orientation gestureOrientation = Orientation.UNKNOWN;
     private float gestureScrollY = 0f;
     private float gestureScrollX = 0f;
+    private float lastTouchX = 0f; // Tracks where the user tapped
     private boolean handleTouch;
     private long seekStart;
     private long seekChange;
@@ -111,7 +114,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             });
         }
 
-        // Initialize minimalist 2x speed overlay at top-center
+        // Initialize minimalist 2x speed overlay at top-right
         speedOverlay = new TextView(context);
         speedOverlay.setTextColor(Color.WHITE);
         speedOverlay.setTextSize(12f);
@@ -134,18 +137,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
+        params.gravity = Gravity.TOP | Gravity.END;
         
+        // Dynamically set initial margin based on orientation
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             params.topMargin = (int) Utils.dpToPx(48); // Safe margin for portrait status bar/notch
         } else {
             params.topMargin = (int) Utils.dpToPx(8); // Higher up in landscape
         }
         
-        // Micro-adjustment to nudge it slightly right to fix the optical center issue
-        // Change the 2 to 3 or 4 if you want to push it further right
-        params.leftMargin = (int) Utils.dpToPx(2); 
-        
+        params.rightMargin = (int) Utils.dpToPx(16);
         addView(speedOverlay, params);
     }
 
@@ -181,6 +182,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
+                lastTouchX = ev.getX(); // Track the X coordinate of the tap
                 if (PlayerActivity.snackbar != null && PlayerActivity.snackbar.isShown()) {
                     PlayerActivity.snackbar.dismiss();
                     handleTouch = false;
@@ -256,6 +258,25 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             return true;
         }
 
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        boolean singleTapPlayPause = prefs.getBoolean("single_tap_play_pause", false);
+
+        if (singleTapPlayPause) {
+            float width = getWidth();
+            // Define the center 33% of the screen
+            if (lastTouchX >= width * 0.33f && lastTouchX <= width * 0.66f) {
+                if (PlayerActivity.player != null) {
+                    if (PlayerActivity.player.isPlaying()) {
+                        PlayerActivity.player.pause();
+                    } else {
+                        PlayerActivity.player.play();
+                    }
+                }
+                return true;
+            }
+        }
+
+        // Default logic for side taps or if the setting is disabled
         if (!PlayerActivity.controllerVisibleFully) {
             showController();
             return true;
@@ -360,7 +381,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
     @Override
     public void onLongPress(MotionEvent motionEvent) {
-        if (PlayerActivity.locked || PlayerActivity.player == null || !PlayerActivity.player.isPlaying()) {
+        if (PlayerActivity.locked || PlayerActivity.player == null) {
+            return;
+        }
+
+        // Improvised fallback: If the video is paused (e.g. from the new single-tap setting), 
+        // long press shows the controller instead of trying to speed up.
+        if (!PlayerActivity.player.isPlaying()) {
+            if (!PlayerActivity.controllerVisibleFully) {
+                showController();
+            }
             return;
         }
         
