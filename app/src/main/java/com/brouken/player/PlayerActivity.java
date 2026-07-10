@@ -340,7 +340,7 @@ public class PlayerActivity extends Activity {
         playerView.setRepeatToggleModes(Player.REPEAT_MODE_ONE);
 
         playerView.setControllerHideOnTouch(false);
-        playerView.setControllerAutoShow(false); // Prevents controls from showing automatically on pause
+        playerView.setControllerAutoShow(false); 
 
         ((DoubleTapPlayerView)playerView).setDoubleTapEnabled(false);
 
@@ -1383,7 +1383,6 @@ public class PlayerActivity extends Activity {
         DefaultExtractorsFactory extractorsFactory = new DefaultExtractorsFactory()
                 .setTsExtractorFlags(DefaultTsPayloadReaderFactory.FLAG_ENABLE_HDMV_DTS_AUDIO_STREAMS)
                 .setTsExtractorTimestampSearchBytes(1500 * TsExtractor.TS_PACKET_SIZE);
-        @RequiresApi(api = Build.VERSION_CODES.N)
         @SuppressLint("WrongConstant") RenderersFactory renderersFactory = new DefaultRenderersFactory(this)
                 .setExtensionRendererMode(mPrefs.decoderPriority)
                 .setMapDV7ToHevc(mPrefs.mapDV7ToHevc);
