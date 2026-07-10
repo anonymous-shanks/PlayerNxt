@@ -342,7 +342,7 @@ public class PlayerActivity extends Activity {
         playerView.setControllerHideOnTouch(false);
         playerView.setControllerAutoShow(false); 
 
-        ((DoubleTapPlayerView)playerView).setDoubleTapEnabled(false);
+        ((DoubleTapPlayerView)playerView).setDoubleTapEnabled(true);
 
         timeBar = playerView.findViewById(R.id.exo_progress);
         timeBar.addListener(new TimeBar.OnScrubListener() {
@@ -459,7 +459,6 @@ public class PlayerActivity extends Activity {
             }
         });
 
-        // Initialize dynamic Speed Button Container with icon and text
         LinearLayout speedContainer = new LinearLayout(this);
         speedContainer.setId(View.generateViewId());
         speedContainer.setOrientation(LinearLayout.HORIZONTAL);
@@ -758,12 +757,22 @@ public class PlayerActivity extends Activity {
         youTubeOverlay.performListener(new YouTubeOverlay.PerformListener() {
             @Override
             public void onAnimationStart() {
-                // Emptied to completely remove the double-tap ripple animations
+                youTubeOverlay.setAlpha(1.0f);
+                youTubeOverlay.setVisibility(View.VISIBLE);
             }
 
             @Override
             public void onAnimationEnd() {
-                // Emptied to completely remove the double-tap ripple animations
+                youTubeOverlay.animate()
+                        .alpha(0.0f)
+                        .setDuration(300)
+                        .setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                youTubeOverlay.setVisibility(View.GONE);
+                                youTubeOverlay.setAlpha(1.0f);
+                            }
+                        });
             }
         });
 
