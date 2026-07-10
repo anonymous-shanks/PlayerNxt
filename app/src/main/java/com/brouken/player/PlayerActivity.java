@@ -340,7 +340,7 @@ public class PlayerActivity extends Activity {
         playerView.setRepeatToggleModes(Player.REPEAT_MODE_ONE);
 
         playerView.setControllerHideOnTouch(false);
-        playerView.setControllerAutoShow(true);
+        playerView.setControllerAutoShow(false); // Prevents controls from showing automatically on pause
 
         ((DoubleTapPlayerView)playerView).setDoubleTapEnabled(false);
 
@@ -467,14 +467,12 @@ public class PlayerActivity extends Activity {
         speedContainer.setClickable(true);
         speedContainer.setFocusable(true);
 
-        // --- ALIGNMENT FIX START ---
         LinearLayout.LayoutParams containerParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
-                (int) Utils.dpToPx(48) // Matches standard ExoPlayer button height
+                (int) Utils.dpToPx(48)
         );
         containerParams.gravity = android.view.Gravity.CENTER_VERTICAL;
         speedContainer.setLayoutParams(containerParams);
-        // --- ALIGNMENT FIX END ---
 
         TypedValue outValue = new TypedValue();
         getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, outValue, true);
@@ -483,7 +481,6 @@ public class PlayerActivity extends Activity {
         speedContainer.setPadding(padH, 0, padH, 0);
 
         ImageView speedIcon = new ImageView(this);
-        // Attempt to fetch standard ExoPlayer styling icon, fallback nicely if it fails
         int speedRes = getResources().getIdentifier("exo_styled_controls_speed", "drawable", getPackageName());
         if (speedRes == 0) speedRes = androidx.media3.ui.R.drawable.exo_styled_controls_speed;
         speedIcon.setImageResource(speedRes);
@@ -689,7 +686,7 @@ public class PlayerActivity extends Activity {
 
         controls.addView(buttonOpen);
         controls.addView(exoSubtitle);
-        controls.addView(speedContainer); // Replaced text view with stylish container
+        controls.addView(speedContainer);
         controls.addView(buttonAspectRatio);
         controls.addView(buttonLock);
         
@@ -761,22 +758,12 @@ public class PlayerActivity extends Activity {
         youTubeOverlay.performListener(new YouTubeOverlay.PerformListener() {
             @Override
             public void onAnimationStart() {
-                youTubeOverlay.setAlpha(1.0f);
-                youTubeOverlay.setVisibility(View.VISIBLE);
+                // Emptied to completely remove the double-tap ripple animations
             }
 
             @Override
             public void onAnimationEnd() {
-                youTubeOverlay.animate()
-                        .alpha(0.0f)
-                        .setDuration(300)
-                        .setListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                youTubeOverlay.setVisibility(View.GONE);
-                                youTubeOverlay.setAlpha(1.0f);
-                            }
-                        });
+                // Emptied to completely remove the double-tap ripple animations
             }
         });
 
@@ -792,7 +779,7 @@ public class PlayerActivity extends Activity {
         if (s.endsWith("0")) s = s.substring(0, s.length() - 1);
         if (s.endsWith("0")) s = s.substring(0, s.length() - 1);
         if (s.endsWith(".")) s = s.substring(0, s.length() - 1);
-        if (!s.contains(".")) s += ".0"; // Always show at least .0
+        if (!s.contains(".")) s += ".0";
         return s + "x";
     }
 
@@ -815,7 +802,6 @@ public class PlayerActivity extends Activity {
         layout.addView(speedLabel);
 
         final android.widget.SeekBar seekBar = new android.widget.SeekBar(this);
-        // Map 0.25x to 4.00x to a progress of 0 to 375
         seekBar.setMax(375); 
         float currentSpeed = player.getPlaybackParameters().speed;
         seekBar.setProgress(Math.max(0, (int)(currentSpeed * 100) - 25));
@@ -844,7 +830,6 @@ public class PlayerActivity extends Activity {
         lp.topMargin = padding;
         layout.addView(seekBar, lp);
 
-        // Add Quick Presets Row
         HorizontalScrollView hsv = new HorizontalScrollView(this);
         hsv.setScrollbarFadingEnabled(true);
         LinearLayout presetsLayout = new LinearLayout(this);
@@ -860,7 +845,7 @@ public class PlayerActivity extends Activity {
             btn.setText(formatSpeed(preset));
             btn.setTextSize(16f);
             btn.setPadding((int)Utils.dpToPx(16), (int)Utils.dpToPx(12), (int)Utils.dpToPx(16), (int)Utils.dpToPx(12));
-            btn.setBackgroundResource(outValue.resourceId); // Nice ripple effect
+            btn.setBackgroundResource(outValue.resourceId);
             btn.setClickable(true);
             btn.setFocusable(true);
             btn.setOnClickListener(v -> {
@@ -1232,7 +1217,7 @@ public class PlayerActivity extends Activity {
                 unregisterReceiver(mReceiver);
                 mReceiver = null;
             }
-            playerView.setControllerAutoShow(true);
+            playerView.setControllerAutoShow(false);
             if (player != null) {
                 if (player.isPlaying())
                     Utils.toggleSystemUi(this, playerView, false);
@@ -2282,7 +2267,7 @@ public class PlayerActivity extends Activity {
             super.onUserLeaveHint();
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.O)
+    @RequiresApi(api = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O ? Build.VERSION_CODES.O : Build.VERSION_CODES.N)
     private void enterPiP() {
         final AppOpsManager appOpsManager = (AppOpsManager) getSystemService(Context.APP_OPS_SERVICE);
         if (AppOpsManager.MODE_ALLOWED != appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, android.os.Process.myUid(), getPackageName())) {
