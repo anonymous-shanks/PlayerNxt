@@ -36,7 +36,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     private Orientation gestureOrientation = Orientation.UNKNOWN;
     private float gestureScrollY = 0f;
     private float gestureScrollX = 0f;
-    private float lastTouchX = 0f; // Tracks where the user tapped
+    private float lastTouchX = 0f;
     private boolean handleTouch;
     private long seekStart;
     private long seekChange;
@@ -114,7 +114,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             });
         }
 
-        // Initialize minimalist 2x speed overlay at top-right
         speedOverlay = new TextView(context);
         speedOverlay.setTextColor(Color.WHITE);
         speedOverlay.setTextSize(12f);
@@ -128,7 +127,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         GradientDrawable bgShape = new GradientDrawable();
         bgShape.setShape(GradientDrawable.RECTANGLE);
         bgShape.setCornerRadius(100f);
-        bgShape.setColor(Color.parseColor("#99000000")); // Dark semi-transparent
+        bgShape.setColor(Color.parseColor("#99000000"));
         speedOverlay.setBackground(bgShape);
         
         speedOverlay.setVisibility(View.GONE);
@@ -139,11 +138,10 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         );
         params.gravity = Gravity.TOP | Gravity.END;
         
-        // Dynamically set initial margin based on orientation
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            params.topMargin = (int) Utils.dpToPx(48); // Safe margin for portrait status bar/notch
+            params.topMargin = (int) Utils.dpToPx(48);
         } else {
-            params.topMargin = (int) Utils.dpToPx(8); // Higher up in landscape
+            params.topMargin = (int) Utils.dpToPx(8);
         }
         
         params.rightMargin = (int) Utils.dpToPx(16);
@@ -153,7 +151,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
     @Override
     protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-        // Automatically adjust the speed overlay margin when the device is rotated
         if (speedOverlay != null) {
             FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) speedOverlay.getLayoutParams();
             if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
@@ -182,7 +179,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         switch (ev.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
-                lastTouchX = ev.getX(); // Track the X coordinate of the tap
+                lastTouchX = ev.getX();
                 if (PlayerActivity.snackbar != null && PlayerActivity.snackbar.isShown()) {
                     PlayerActivity.snackbar.dismiss();
                     handleTouch = false;
@@ -215,8 +212,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                             PlayerActivity.player.play();
                         }
                     }
-
-                    setControllerAutoShow(true);
 
                     if (seekProgress) {
                         seekProgress = false;
@@ -263,7 +258,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         if (singleTapPlayPause) {
             float width = getWidth();
-            // Define the center 33% of the screen
             if (lastTouchX >= width * 0.33f && lastTouchX <= width * 0.66f) {
                 if (PlayerActivity.player != null) {
                     if (PlayerActivity.player.isPlaying()) {
@@ -276,7 +270,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             }
         }
 
-        // Default logic for side taps or if the setting is disabled
         if (!PlayerActivity.controllerVisibleFully) {
             showController();
             return true;
@@ -305,8 +298,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
         if (gestureOrientation == Orientation.HORIZONTAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollX += distanceX;
             if (Math.abs(gestureScrollX) > SCROLL_STEP || (gestureOrientation == Orientation.HORIZONTAL && Math.abs(gestureScrollX) > SCROLL_STEP_SEEK)) {
-                setControllerAutoShow(false);
-
+                
                 if (gestureOrientation == Orientation.UNKNOWN) {
                     if (PlayerActivity.player.isPlaying()) {
                         restorePlayState = true;
@@ -385,8 +377,6 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             return;
         }
 
-        // Improvised fallback: If the video is paused (e.g. from the new single-tap setting), 
-        // long press shows the controller instead of trying to speed up.
         if (!PlayerActivity.player.isPlaying()) {
             if (!PlayerActivity.controllerVisibleFully) {
                 showController();
