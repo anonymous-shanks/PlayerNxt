@@ -136,15 +136,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        params.gravity = Gravity.TOP | Gravity.END;
+        // Changed to Top-Center
+        params.gravity = Gravity.TOP | Gravity.CENTER_HORIZONTAL;
         
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             params.topMargin = (int) Utils.dpToPx(48);
         } else {
-            params.topMargin = (int) Utils.dpToPx(8);
+            params.topMargin = (int) Utils.dpToPx(24);
         }
         
-        params.rightMargin = (int) Utils.dpToPx(16);
+        params.rightMargin = 0; // Removed right margin since it is centered now
         addView(speedOverlay, params);
     }
 
@@ -156,7 +157,7 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
                 params.topMargin = (int) Utils.dpToPx(48);
             } else {
-                params.topMargin = (int) Utils.dpToPx(8);
+                params.topMargin = (int) Utils.dpToPx(24);
             }
             speedOverlay.setLayoutParams(params);
         }
@@ -295,6 +296,12 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
             return false;
         }
 
+        // Fetch dynamic sensitivities from SharedPreferences (Default is 50 -> 1.0f multiplier)
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
+        float seekSens = prefs.getInt("seek_sensitivity", 50) / 50f;
+        float brightSens = prefs.getInt("bright_sensitivity", 50) / 50f;
+        float volSens = prefs.getInt("vol_sensitivity", 50) / 50f;
+
         if (gestureOrientation == Orientation.HORIZONTAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollX += distanceX;
             if (Math.abs(gestureScrollX) > SCROLL_STEP || (gestureOrientation == Orientation.HORIZONTAL && Math.abs(gestureScrollX) > SCROLL_STEP_SEEK)) {
@@ -317,7 +324,9 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
                 gestureOrientation = Orientation.HORIZONTAL;
                 long position = 0;
-                float distanceDiff = Math.max(0.5f, Math.min(Math.abs(Utils.pxToDp(distanceX) / 4), 10.f));
+                
+                // Apply Seek Sensitivity Multiplier here
+                float distanceDiff = Math.max(0.5f, Math.min(Math.abs(Utils.pxToDp(distanceX) / 4), 10.f)) * seekSens;
 
                 if (PlayerActivity.haveMedia) {
                     if (gestureScrollX > 0) {
@@ -351,7 +360,16 @@ public class CustomPlayerView extends PlayerView implements GestureDetector.OnGe
 
         if (gestureOrientation == Orientation.VERTICAL || gestureOrientation == Orientation.UNKNOWN) {
             gestureScrollY += distanceY;
-            if (Math.abs(gestureScrollY) > SCROLL_STEP) {
+            
+            // Calculate dynamic vertical step requirement based on user sensitivity
+            float currentVerticalStep = SCROLL_STEP;
+            if (motionEvent.getX() < (float)(getWidth() / 2)) {
+                currentVerticalStep = SCROLL_STEP / Math.max(0.1f, brightSens);
+            } else {
+                currentVerticalStep = SCROLL_STEP / Math.max(0.1f, volSens);
+            }
+
+            if (Math.abs(gestureScrollY) > currentVerticalStep) {
                 if (gestureOrientation == Orientation.UNKNOWN) {
                     canBoostVolume = Utils.isVolumeMax(mAudioManager);
                     canSetAutoBrightness = brightnessControl.currentBrightnessLevel <= 0;
