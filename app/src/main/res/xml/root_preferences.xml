@@ -4,19 +4,19 @@
 
     <PreferenceCategory app:title="Gestures &amp; Sensitivity">
         
-        <!-- Single Tap Toggle (Jo humne pehle banaya tha) -->
+        <!-- Single Tap Toggle -->
         <SwitchPreferenceCompat
             app:key="single_tap_play_pause"
             app:defaultValue="false"
             app:title="Single tap to play/pause"
             app:summary="Tap on the center of the screen to play or pause" />
 
-        <!-- Naye Sensitivity Sliders -->
+        <!-- Sensitivity Sliders with corrected android:max attribute -->
         <SeekBarPreference
             app:key="seek_sensitivity"
             app:defaultValue="50"
             app:min="10"
-            app:max="150"
+            android:max="150"
             app:title="Seek gesture sensitivity"
             app:showSeekBarValue="true" />
 
@@ -24,7 +24,7 @@
             app:key="bright_sensitivity"
             app:defaultValue="50"
             app:min="10"
-            app:max="150"
+            android:max="150"
             app:title="Brightness gesture sensitivity"
             app:showSeekBarValue="true" />
 
@@ -32,7 +32,7 @@
             app:key="vol_sensitivity"
             app:defaultValue="50"
             app:min="10"
-            app:max="150"
+            android:max="150"
             app:title="Volume gesture sensitivity"
             app:showSeekBarValue="true" />
             
