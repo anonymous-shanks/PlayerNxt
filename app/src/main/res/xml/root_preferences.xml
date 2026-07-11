@@ -2,7 +2,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory app:title="Gestures &amp; Sensitivity">
-
+        
         <!-- Single Tap Toggle (Jo humne pehle banaya tha) -->
         <SwitchPreferenceCompat
             app:key="single_tap_play_pause"
@@ -34,9 +34,11 @@
             app:max="150"
             app:title="Volume gesture sensitivity"
             app:showSeekBarValue="true" />
-
+            
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/pref_general_header">
+        
         <ListPreference
             app:defaultValue="auto"
             app:entries="@array/file_access_entries"
@@ -77,11 +79,11 @@
             app:defaultValue="false"
             app:summary="@string/pref_repeat_toggle_summary"
             app:title="@string/pref_repeat_toggle" />
-
+            
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/pref_subtitle_header">
-
+        
         <SwitchPreferenceCompat
             app:key="subtitleStyleEmbedded"
             app:defaultValue="true"
@@ -100,11 +102,11 @@
             app:title="@string/pref_captioning_preferences">
             <intent android:action="android.settings.CAPTIONING_SETTINGS" />
         </Preference>
-
+        
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/pref_dangerous_header">
-
+        
         <Preference
             app:selectable="false"
             app:summary="@string/pref_dangerous_warning" />
@@ -129,7 +131,7 @@
             app:summaryOn="@string/pref_map_dv7_on"
             app:summaryOff="@string/pref_map_dv7_off"
             app:title="@string/pref_map_dv7" />
-
+            
     </PreferenceCategory>
 
 </PreferenceScreen>
